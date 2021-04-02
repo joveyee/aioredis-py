@@ -151,3 +151,54 @@ class ListCommandsMixin:
         key already exists and holds a list.
         """
         return self.execute(b'RPUSHX', key, value)
+
+   def lpos(self, key,value, rank=None, count=None, maxlen=None,encoding=_NOTSET):
+        """The command returns the index of matching elements inside a Redis list.
+        By default, when no options are given, it will scan the list from head to tail,
+        looking for the first match of "element".
+        If the element is found, its index (the zero-based position in the list) is returned.
+        Otherwise, if no match is found, NULL is returned.
+        """
+        if rank is not None and not isinstance(rank,int):
+            raise TypeError('rank argument must be int')
+        if  count is not None and not isinstance(count,int):
+            raise TypeError('count argument must be int')
+        if  maxlen is not None and not isinstance(maxlen,int):
+            raise TypeError('maxlen argument must be int')
+
+        if  rank is None and count is None and maxlen is None:
+            return self.execute(b'LPOS',key,value)
+
+        if rank is not None and count is None and maxlen is None :
+            return self.execute(b'LPOS',key,value,b'RANK',rank,encoding=encoding)
+        if rank is None and count is not None and maxlen is None :
+            return self.execute(b'LPOS',key,value,b'COUNT',count,encoding=encoding)
+        if rank is None and count is None and maxlen is not None :
+            return self.execute(b'LPOS',key,value,b'MAXLEN',maxlen,encoding=encoding)
+
+        if rank is not None and count is not None and maxlen is None:
+            return self.execute(b'LPOS',key,value,b'RANK',rank, b'COUNT',count,encoding=encoding)
+        if rank is not None and count is None and maxlen is not None:
+            return self.execute(b'LPOS',key,value, b'RANK',rank,b'MAXLEN',maxlen, encoding=encoding)
+        if rank is  None and count is not None and maxlen is not None:
+            return self.execute(b'LPOS',key,value, b'COUNT',count,b'MAXLEN',maxlen,encoding=encoding)
+
+        if rank is not None and count is not None and maxlen is not None:
+            return self.execute(b'LPOS',key,value, b'RANK',rank,b'COUNT',count,b'MAXLEN',maxlen,encoding=encoding)
+
+    def lmove(self, sourcekey, destkey, source_is_left, dest_is_left,encoding=_NOTSET):
+        """Atomically returns and removes the first/last element
+        (head/tail depending on the wherefrom argument) of the
+        list stored at source, and pushes the element at the
+        first/last element (head/tail depending on the whereto argument)
+        of the list stored at destination.
+        """
+        if not isinstance(source_is_left, bool):
+            raise TypeError('source_left_true_right_false argument must be bool')
+        if not isinstance(dest_is_left, bool):
+            raise TypeError('dest_left_true_right_false argument must be bool')
+        leftright1 = b'LEFT' if source_is_left else b'RIGHT'
+        leftright2 = b'LEFT' if dest_is_left else b'RIGHT'
+        return self.execute(b'LMOVE',sourcekey,destkey,leftright1,leftright2,encoding=encoding )
+
+    
